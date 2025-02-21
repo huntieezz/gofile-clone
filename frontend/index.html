@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gofile Clone - Upload</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-container">
+        <header>
+            <h1>🚀 Gofile Clone</h1>
+            <nav>
+                <a href="login.html">🔒 Login</a>
+                <a href="register.html">📝 Register</a>
+            </nav>
+        </header>
+
+        <!-- Dashboard (visible only when logged in) -->
+        <div id="dashboard" class="dashboard">
+            <div class="dashboard-icon">
+                <img src="dashboard-icon.png" alt="Dashboard Icon" />
+            </div>
+            <h2>Your Dashboard</h2>
+            <div id="uploadedFiles">
+                <h3>Uploaded Files:</h3>
+                <ul id="filesList"></ul>
+            </div>
+        </div>
+
+        <main>
+            <div class="upload-box">
+                <h2>Upload Your File</h2>
+                <input type="file" id="fileInput">
+                <button onclick="uploadFile()">📤 Upload</button>
+                <p id="status"></p>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Gofile Clone. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        if (localStorage.getItem('authToken')) {
+            document.getElementById("dashboard").style.display = "block";
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById("fileInput");
+            const status = document.getElementById("status");
+
+            if (fileInput.files.length === 0) {
+                status.innerText = "❌ Please select a file to upload.";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const response = await fetch("http://localhost:5001/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.downloadLink) {
+                status.innerHTML = `✅ File uploaded successfully! <br>
+                📥 Download Link: <a href="${result.downloadLink}" target="_blank">${result.downloadLink}</a>`;
+                addFileToDashboard(result.downloadLink);
+            } else {
+                status.innerText = `❌ Upload failed: ${result.message}`;
+            }
+        }
+
+        function addFileToDashboard(link) {
+            const filesList = document.getElementById("filesList");
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+            filesList.appendChild(listItem);
+        }
+    </script>
+</body>
+</html>
