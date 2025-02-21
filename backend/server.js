@@ -9,6 +9,7 @@ const app = express();
 const port = 5001;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Setup folders
@@ -33,8 +34,8 @@ const verificationTokens = JSON.parse(fs.readFileSync(verificationFile));
 let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'gofileclone@gmail.com', // Replace with your email
-        pass: 'Boardslide!1' // Replace with your email password or app password
+        user: 'youremail@gmail.com', // Replace with your email
+        pass: 'yourpassword' // Replace with your email password or app password
     }
 });
 
@@ -111,12 +112,16 @@ app.post('/register', upload.single('profilePicture'), (req, res) => {
         const token = uuid.v4(); // Generate a unique verification token
         const profilePic = req.file ? `/uploads/${req.file.filename}` : '/default-profile.png';
 
+        // Log registration attempt
+        console.log(`Attempting registration for: ${email}`);
+
         accounts.push({
             firstName, lastName, email, password: hashedPassword, verified: false, token, profilePic
         });
-        fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
-        fs.writeFileSync(verificationFile, JSON.stringify({ ...verificationTokens, [token]: email }, null, 2));
+        fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));  // Save to accounts.json
+        fs.writeFileSync(verificationFile, JSON.stringify({ ...verificationTokens, [token]: email }, null, 2));  // Save verification token
 
+        // Send email verification
         sendVerificationEmail(email, token);
         console.log(`Registration successful for email: ${email}`);
         res.status(200).json({ message: 'Registration successful! Please verify your email.' });
@@ -134,7 +139,7 @@ app.get('/verify/:token', (req, res) => {
 
     const account = accounts.find(acc => acc.email === email);
     account.verified = true;
-    fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
+    fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));  // Update the account's verified status
     delete verificationTokens[token];
     fs.writeFileSync(verificationFile, JSON.stringify(verificationTokens, null, 2));
 

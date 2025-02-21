@@ -3,63 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Gofile Clone</title>
+    <title>Gofile Clone - Register</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="glass-container">
         <header>
-            <h1>Register</h1>
+            <h1>🚀 Gofile Clone</h1>
+            <nav>
+                <a href="login.html">🔒 Login</a>
+                <a href="register.html">📝 Register</a>
+            </nav>
         </header>
 
-        <div class="form-container">
-            <form id="registerForm">
-                <input type="text" id="firstName" placeholder="First Name" required>
-                <input type="text" id="lastName" placeholder="Last Name" required>
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
-                <button type="submit">Register</button>
-            </form>
-        </div>
-        
+        <main>
+            <div class="register-box">
+                <h2>Create Your Account</h2>
+                <form action="http://localhost:5001/register" method="POST" enctype="multipart/form-data">
+                    <div>
+                        <label for="firstName">First Name:</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+                    <div>
+                        <label for="lastName">Last Name:</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+                    <div>
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div>
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <div>
+                        <label for="profilePicture">Profile Picture:</label>
+                        <input type="file" id="profilePicture" name="profilePicture">
+                    </div>
+                    <button type="submit">Register</button>
+                </form>
+                <p id="status"></p>
+            </div>
+        </main>
+
         <footer>
             <p>&copy; 2025 Gofile Clone. All rights reserved.</p>
         </footer>
     </div>
 
     <script>
-        document.getElementById("registerForm").addEventListener("submit", function(event) {
-            event.preventDefault();
+        // Optionally add some JavaScript to handle any feedback, e.g., showing a success message or handling errors.
+        const form = document.querySelector("form");
+        const status = document.getElementById("status");
 
-            const firstName = document.getElementById("firstName").value;
-            const lastName = document.getElementById("lastName").value;
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
-
-            if (password !== confirmPassword) {
-                alert("Passwords do not match!");
-                return;
-            }
-
-            fetch("http://localhost:5001/register", {  // Change this URL if deploying on Vercel
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ firstName, lastName, email, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert("Registration successful! Please check your email for verification.");
-                    window.location.href = "login.html";  // Redirect to login after successful registration
-                } else {
-                    alert("Registration failed: " + data.message);
-                }
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            const response = await fetch(form.action, {
+                method: form.method,
+                body: formData
             });
-        });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                status.textContent = result.message;
+                status.style.color = "green";
+            } else {
+                status.textContent = `❌ ${result.message}`;
+                status.style.color = "red";
+            }
+        };
     </script>
 </body>
 </html>
