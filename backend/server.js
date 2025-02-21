@@ -33,8 +33,8 @@ const verificationTokens = JSON.parse(fs.readFileSync(verificationFile));
 let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'youremail@gmail.com', // Replace with your email
-        pass: 'yourpassword' // Replace with your email password or app password
+        user: 'gofileclone@gmail.com', // Replace with your email
+        pass: 'dqrb vigh hwfz hpum' // Replace with your email password or app password
     }
 });
 

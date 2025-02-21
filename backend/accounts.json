@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "firstName": "Hunter",
+    "lastName": "Jackson",
+    "email": "huj76@icloud.com",
+    "password": "$2b$10$/cYixVCn07Wi1cYuCvHHw.ubdUOzL3rOjsonsL.q/OEeHjgKSMLhW",
+    "verified": false,
+    "token": "d03c80b3-538d-488d-896d-bdaa4b0375d8",
+    "profilePic": "/uploads/dd13715cadb6524961573985c1cdff05"
+  }
+]
