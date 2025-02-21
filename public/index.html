@@ -38,6 +38,7 @@
                 <input type="file" id="fileInput">
                 <button onclick="uploadFile()">📤 Upload</button>
                 <p id="status"></p>
+                <p id="downloadLink" style="display:none;"></p> <!-- Display the download link here -->
             </div>
         </main>
 
@@ -59,6 +60,7 @@
         async function uploadFile() {
             const fileInput = document.getElementById("fileInput");
             const status = document.getElementById("status");
+            const downloadLink = document.getElementById("downloadLink");
 
             if (fileInput.files.length === 0) {
                 status.innerText = "❌ Please select a file to upload.";
@@ -75,8 +77,9 @@
 
             const result = await response.json();
             if (result.downloadLink) {
-                status.innerHTML = `✅ File uploaded successfully! <br>
-                📥 Download Link: <a href="${result.downloadLink}" target="_blank">${result.downloadLink}</a>`;
+                status.innerHTML = `✅ File uploaded successfully! <br>`;
+                downloadLink.style.display = "block"; // Show the download link
+                downloadLink.innerHTML = `📥 <a href="${result.downloadLink}" target="_blank">${result.downloadLink}</a>`;
                 addFileToDashboard(result.downloadLink);
             } else {
                 status.innerText = `❌ Upload failed: ${result.message}`;
@@ -92,7 +95,6 @@
 
         function toggleDashboard() {
             const dashboard = document.getElementById("dashboard");
-            dashboard.style.display = dashboard.style.display
             dashboard.style.display = (dashboard.style.display === "none") ? "block" : "none";
         }
 
