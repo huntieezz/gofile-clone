@@ -4,55 +4,77 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
-
+const uuid = require('uuid');
 const app = express();
 const port = 5001;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Whitelist IP file
+// Setup folders
+const uploadFolder = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
+
+// Files to store IP whitelist and accounts
 const whitelistFile = path.join(__dirname, 'whitelisted.json');
-if (!fs.existsSync(whitelistFile)) fs.writeFileSync(whitelistFile, '[]');
+const accountsFile = path.join(__dirname, 'accounts.json');
+const verificationFile = path.join(__dirname, 'verification.json');
+
+// Initialize whitelist and accounts if they don't exist
+if (!fs.existsSync(whitelistFile)) fs.writeFileSync(whitelistFile, JSON.stringify([]));
+if (!fs.existsSync(accountsFile)) fs.writeFileSync(accountsFile, JSON.stringify([]));
+if (!fs.existsSync(verificationFile)) fs.writeFileSync(verificationFile, JSON.stringify({}));
 
 const whitelist = JSON.parse(fs.readFileSync(whitelistFile));
+const accounts = JSON.parse(fs.readFileSync(accountsFile));
+const verificationTokens = JSON.parse(fs.readFileSync(verificationFile));
 
-// Server and file upload handling
-app.post('/upload', (req, res) => {
-    const ip = req.ip;
-    if (!whitelist.includes(ip)) {
-        return res.status(403).json({ message: 'Your IP is not whitelisted.' });
+// Email transport setup
+let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'youremail@gmail.com', // Replace with your email
+        pass: 'yourpassword' // Replace with your email password or app password
     }
-    
-    // Handle file upload logic
-    // Your file handling logic here...
-
-    res.json({ downloadLink: 'https://your-link.com/download' });
 });
 
-// Admin whitelist handling
+// Whitelist IP handling
 app.post('/whitelist', (req, res) => {
     const { ip } = req.body;
+    if (!ip) {
+        return res.status(400).json({ message: 'IP is required.' });
+    }
+
     if (whitelist.includes(ip)) {
-        return res.json({ message: 'IP already whitelisted.' });
+        return res.status(200).json({ message: 'IP already whitelisted.' });
     }
 
     whitelist.push(ip);
     fs.writeFileSync(whitelistFile, JSON.stringify(whitelist, null, 2));
-    res.json({ message: `IP ${ip} has been whitelisted.` });
+    console.log(`Whitelisted IP: ${ip}`);
+    res.status(200).json({ message: `IP ${ip} whitelisted successfully.` });
 });
 
-// Email sending setup
-let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'youremail@gmail.com',
-        pass: 'yourpassword'
+// File upload handling
+const upload = multer({ dest: uploadFolder });
+
+app.post('/upload', upload.single('file'), (req, res) => {
+    const ip = req.ip;
+    if (!whitelist.includes(ip)) {
+        return res.status(403).json({ message: 'Your IP is not whitelisted.' });
     }
+
+    console.log(`File uploaded: ${req.file.filename}`);
+
+    // Save file info to show in the dashboard
+    const downloadLink = `http://localhost:${port}/uploads/${req.file.filename}`;
+    res.status(200).json({ downloadLink });
 });
 
-// Email verification function
-function sendVerificationEmail(email, verificationLink) {
+// Email verification sending
+function sendVerificationEmail(email, token) {
+    const verificationLink = `http://localhost:${port}/verify/${token}`;
+
     const mailOptions = {
         from: 'youremail@gmail.com',
         to: email,
@@ -68,6 +90,53 @@ function sendVerificationEmail(email, verificationLink) {
         }
     });
 }
+
+// User registration with email verification
+app.post('/register', (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    if (accounts.find(account => account.email === email)) {
+        return res.status(400).json({ message: 'Email already registered.' });
+    }
+
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) {
+            return res.status(500).json({ message: 'Error encrypting password.' });
+        }
+
+        const token = uuid.v4(); // Generate a unique verification token
+        accounts.push({ email, password: hashedPassword, verified: false, token });
+        fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
+        fs.writeFileSync(verificationFile, JSON.stringify({ ...verificationTokens, [token]: email }, null, 2));
+
+        sendVerificationEmail(email, token);
+        console.log(`Registration successful for email: ${email}`);
+        res.status(200).json({ message: 'Registration successful! Please verify your email.' });
+    });
+});
+
+// Email verification endpoint
+app.get('/verify/:token', (req, res) => {
+    const { token } = req.params;
+    const email = verificationTokens[token];
+
+    if (!email) {
+        return res.status(400).json({ message: 'Invalid verification token.' });
+    }
+
+    const account = accounts.find(acc => acc.email === email);
+    account.verified = true;
+    fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
+    delete verificationTokens[token];
+    fs.writeFileSync(verificationFile, JSON.stringify(verificationTokens, null, 2));
+
+    console.log(`Email verified for: ${email}`);
+    res.status(200).json({ message: 'Email successfully verified!' });
+});
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

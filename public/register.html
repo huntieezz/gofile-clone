@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gofile Clone - Register</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-container">
+        <header>
+            <h1>📝 Register</h1>
+            <nav>
+                <a href="login.html">🔒 Login</a>
+                <a href="index.html">⬅ Go Home</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="form-container">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button onclick="register()">Register</button>
+                <p id="status"></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        async function register() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const status = document.getElementById("status");
+
+            const response = await fetch("http://localhost:5001/register", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+            status.innerText = result.message;
+        }
+    </script>
+</body>
+</html>
