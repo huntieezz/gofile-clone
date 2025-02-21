@@ -91,12 +91,12 @@ function sendVerificationEmail(email, token) {
     });
 }
 
-// User registration with email verification
-app.post('/register', (req, res) => {
-    const { email, password } = req.body;
+// User registration with email verification and profile picture
+app.post('/register', upload.single('profilePicture'), (req, res) => {
+    const { firstName, lastName, email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required.' });
+    if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({ message: 'All fields are required.' });
     }
 
     if (accounts.find(account => account.email === email)) {
@@ -109,7 +109,11 @@ app.post('/register', (req, res) => {
         }
 
         const token = uuid.v4(); // Generate a unique verification token
-        accounts.push({ email, password: hashedPassword, verified: false, token });
+        const profilePic = req.file ? `/uploads/${req.file.filename}` : '/default-profile.png';
+
+        accounts.push({
+            firstName, lastName, email, password: hashedPassword, verified: false, token, profilePic
+        });
         fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
         fs.writeFileSync(verificationFile, JSON.stringify({ ...verificationTokens, [token]: email }, null, 2));
 
@@ -136,6 +140,24 @@ app.get('/verify/:token', (req, res) => {
 
     console.log(`Email verified for: ${email}`);
     res.status(200).json({ message: 'Email successfully verified!' });
+});
+
+// User login
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+
+    const account = accounts.find(acc => acc.email === email);
+    if (!account) {
+        return res.status(400).json({ message: 'Email not registered.' });
+    }
+
+    bcrypt.compare(password, account.password, (err, isMatch) => {
+        if (err || !isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials.' });
+        }
+
+        res.status(200).json({ message: 'Login successful!' });
+    });
 });
 
 app.listen(port, () => {

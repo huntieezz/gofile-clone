@@ -16,16 +16,20 @@
             </nav>
         </header>
 
+        <!-- Profile circle icon on the top-right corner (for logged-in users) -->
+        <div id="profile-circle" style="display:none;" onclick="toggleDashboard()">
+            <span id="profile-initials"></span>
+        </div>
+
         <!-- Dashboard (visible only when logged in) -->
         <div id="dashboard" class="dashboard" style="display:none;">
-            <div class="dashboard-icon">
-                <img src="dashboard-icon.png" alt="Dashboard Icon" />
-            </div>
             <h2>Your Dashboard</h2>
             <div id="uploadedFiles">
                 <h3>Uploaded Files:</h3>
                 <ul id="filesList"></ul>
             </div>
+            <input type="file" id="profilePicture" />
+            <button onclick="uploadProfilePicture()">Update Profile Picture</button>
         </div>
 
         <main>
@@ -44,7 +48,11 @@
 
     <script>
         // Simulating login state for now. Replace this with your actual auth logic
-        if (localStorage.getItem('authToken')) {
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (user) {
+            document.getElementById("profile-circle").style.display = "block";
+            document.getElementById("profile-initials").textContent = user.firstName[0] + '.' + user.lastName[0];
             document.getElementById("dashboard").style.display = "block";
         }
 
@@ -80,6 +88,38 @@
             const listItem = document.createElement("li");
             listItem.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
             filesList.appendChild(listItem);
+        }
+
+        function toggleDashboard() {
+            const dashboard = document.getElementById("dashboard");
+            dashboard.style.display = dashboard.style.display
+            dashboard.style.display = (dashboard.style.display === "none") ? "block" : "none";
+        }
+
+        function uploadProfilePicture() {
+            const profilePictureInput = document.getElementById("profilePicture");
+            const file = profilePictureInput.files[0];
+            if (!file) {
+                alert("Please select an image to upload.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("profilePicture", file);
+
+            fetch("http://localhost:5001/uploadProfilePicture", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.profilePic) {
+                    alert("Profile picture updated!");
+                    document.getElementById("profile-circle").style.backgroundImage = `url(${result.profilePic})`;
+                } else {
+                    alert("Error updating profile picture.");
+                }
+            });
         }
     </script>
 </body>
