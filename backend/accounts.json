@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "firstName": "Hunter",
+    "lastName": "Jackson",
+    "email": "huj76@icloud.com",
+    "password": "Boardslide!1",
+    "verified": false,
+    "token": "5444c257-91d3-4a39-b056-bbd1d654cd44",
+    "profilePic": "/uploads/5f1387e42e7ca5ecaab1329030262b8a"
+  }
+]
