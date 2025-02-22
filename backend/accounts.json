@@ -7,5 +7,14 @@
     "verified": false,
     "token": "d03c80b3-538d-488d-896d-bdaa4b0375d8",
     "profilePic": "/uploads/dd13715cadb6524961573985c1cdff05"
+  },
+  {
+    "firstName": "Hanna",
+    "lastName": "Bergqvist Jackson",
+    "email": "hannabjackson@gmail.com",
+    "password": "$2b$10$opV92rLB8qqriHW0QtLIrO9MlhFPYvS31MxUKh/kkieqbSYqPOvJi",
+    "verified": false,
+    "token": "f48ec5cb-d9c2-4f44-9a0c-bcc5b30c3ea8",
+    "profilePic": "/default-profile.png"
   }
 ]

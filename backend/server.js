@@ -2,11 +2,12 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const uuid = require('uuid');
 const app = express();
 const port = 5001;
+
+const host = process.env.HOST_URL || 'https://your-vercel-app.vercel.app'; // Replace with your actual domain
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,11 +23,11 @@ const verificationFile = path.join(__dirname, 'verification.json');
 
 // Initialize whitelist and accounts if they don't exist
 if (!fs.existsSync(whitelistFile)) fs.writeFileSync(whitelistFile, JSON.stringify([]));
-if (!fs.existsSync(accountsFile)) fs.writeFileSync(accountsFile, JSON.stringify([])); // Ensure this is initialized as an empty array
+if (!fs.existsSync(accountsFile)) fs.writeFileSync(accountsFile, JSON.stringify([]));
 if (!fs.existsSync(verificationFile)) fs.writeFileSync(verificationFile, JSON.stringify({}));
 
 const whitelist = JSON.parse(fs.readFileSync(whitelistFile));
-let accounts = JSON.parse(fs.readFileSync(accountsFile)); // Ensure accounts is initialized as an array
+let accounts = JSON.parse(fs.readFileSync(accountsFile));
 const verificationTokens = JSON.parse(fs.readFileSync(verificationFile));
 
 // Email transport setup
@@ -34,16 +35,14 @@ let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'gofileclone@gmail.com', // Replace with your email
-        pass: 'dqrb vigh hwfz hpum' // Replace with your email password or app password
+        pass: 'your-app-password'      // Replace with your app password
     }
 });
 
 // Whitelist IP handling
 app.post('/whitelist', (req, res) => {
     const { ip } = req.body;
-    if (!ip) {
-        return res.status(400).json({ message: 'IP is required.' });
-    }
+    if (!ip) return res.status(400).json({ message: 'IP is required.' });
 
     if (whitelist.includes(ip)) {
         return res.status(200).json({ message: 'IP already whitelisted.' });
@@ -65,18 +64,16 @@ app.post('/upload', upload.single('file'), (req, res) => {
     }
 
     console.log(`File uploaded: ${req.file.filename}`);
-
-    // Save file info to show in the dashboard
-    const downloadLink = `http://localhost:${port}/uploads/${req.file.filename}`;
+    const downloadLink = `${host}/uploads/${req.file.filename}`;
     res.status(200).json({ downloadLink });
 });
 
 // Email verification sending
 function sendVerificationEmail(email, token) {
-    const verificationLink = `http://localhost:${port}/verify/${token}`;
+    const verificationLink = `${host}/verify/${token}`;
 
     const mailOptions = {
-        from: 'youremail@gmail.com',
+        from: 'gofileclone@gmail.com',
         to: email,
         subject: 'Email Verification for Gofile Clone',
         text: `Click the link to verify your email: ${verificationLink}`
@@ -103,27 +100,31 @@ app.post('/register', upload.single('profilePicture'), (req, res) => {
         return res.status(400).json({ message: 'Email already registered.' });
     }
 
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            return res.status(500).json({ message: 'Error encrypting password.' });
-        }
+    const token = uuid.v4();
+    const profilePic = req.file ? `/uploads/${req.file.filename}` : '/default-profile.png';
 
-        const token = uuid.v4(); // Generate a unique verification token
-        const profilePic = req.file ? `/uploads/${req.file.filename}` : '/default-profile.png';
+    // Store the password in plaintext as requested
+    const newAccount = {
+        firstName,
+        lastName,
+        email,
+        password, // Plaintext password
+        verified: false,
+        token,
+        profilePic
+    };
 
-        accounts.push({
-            firstName, lastName, email, password: hashedPassword, verified: false, token, profilePic
-        });
+    // Add the account to the accounts array and write it to the file
+    accounts.push(newAccount);
+    fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
 
-        // Ensure the accounts data is written as an array
-        fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
+    // Store the verification token
+    verificationTokens[token] = email;
+    fs.writeFileSync(verificationFile, JSON.stringify(verificationTokens, null, 2));
 
-        fs.writeFileSync(verificationFile, JSON.stringify({ ...verificationTokens, [token]: email }, null, 2));
-
-        sendVerificationEmail(email, token);
-        console.log(`Registration successful for email: ${email}`);
-        res.status(200).json({ message: 'Registration successful! Please verify your email.' });
-    });
+    sendVerificationEmail(email, token);
+    console.log(`Registration successful for email: ${email}`);
+    res.status(200).json({ message: 'Registration successful! Please verify your email.' });
 });
 
 // Email verification endpoint
@@ -136,33 +137,40 @@ app.get('/verify/:token', (req, res) => {
     }
 
     const account = accounts.find(acc => acc.email === email);
-    account.verified = true;
-    fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
-    delete verificationTokens[token];
-    fs.writeFileSync(verificationFile, JSON.stringify(verificationTokens, null, 2));
+    if (account) {
+        account.verified = true;
+        fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
+        delete verificationTokens[token];
+        fs.writeFileSync(verificationFile, JSON.stringify(verificationTokens, null, 2));
 
-    console.log(`Email verified for: ${email}`);
-    res.status(200).json({ message: 'Email successfully verified!' });
+        console.log(`Email verified for: ${email}`);
+        res.status(200).json({ message: 'Email successfully verified!' });
+    } else {
+        res.status(400).json({ message: 'Account not found.' });
+    }
 });
 
 // User login
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-
     const account = accounts.find(acc => acc.email === email);
+
     if (!account) {
         return res.status(400).json({ message: 'Email not registered.' });
     }
 
-    bcrypt.compare(password, account.password, (err, isMatch) => {
-        if (err || !isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
-        }
+    if (!account.verified) {
+        return res.status(400).json({ message: 'Email not verified. Please check your inbox.' });
+    }
 
-        res.status(200).json({ message: 'Login successful!' });
-    });
+    // Check plaintext password (since we're not using bcrypt now)
+    if (account.password !== password) {
+        return res.status(400).json({ message: 'Invalid credentials.' });
+    }
+
+    res.status(200).json({ message: 'Login successful!' });
 });
 
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on ${host}`);
 });

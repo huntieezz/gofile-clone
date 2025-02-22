@@ -38,6 +38,7 @@
                 <input type="file" id="fileInput">
                 <button onclick="uploadFile()">📤 Upload</button>
                 <p id="status"></p>
+                <p id="progress" style="display:none;"></p>
                 <p id="downloadLink" style="display:none;"></p> <!-- Display the download link here -->
             </div>
         </main>
@@ -48,7 +49,6 @@
     </div>
 
     <script>
-        // Simulating login state for now. Replace this with your actual auth logic
         const user = JSON.parse(localStorage.getItem('user'));
 
         if (user) {
@@ -60,6 +60,7 @@
         async function uploadFile() {
             const fileInput = document.getElementById("fileInput");
             const status = document.getElementById("status");
+            const progress = document.getElementById("progress");
             const downloadLink = document.getElementById("downloadLink");
 
             if (fileInput.files.length === 0) {
@@ -67,23 +68,50 @@
                 return;
             }
 
+            const file = fileInput.files[0];
             const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
+            formData.append("file", file);
 
-            const response = await fetch("http://localhost:5001/upload", {
-                method: "POST",
-                body: formData
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const uploadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
+                    const totalMB = (e.total / (1024 * 1024)).toFixed(2);
+                    progress.style.display = "block";
+                    progress.innerText = `Uploading: ${uploadedMB} MB of ${totalMB} MB`;
+                }
+            };
+
+            xhr.onload = () => {
+                const result = JSON.parse(xhr.responseText);
+                if (xhr.status === 200 && result.downloadLink) {
+                    status.innerHTML = `✅ File uploaded successfully! <br>`;
+                    downloadLink.style.display = "block";
+                    downloadLink.innerHTML = `📥 <a href="${result.downloadLink}" target="_blank">${result.downloadLink}</a>
+                    <button onclick="copyLink('${result.downloadLink}')">📋 Copy Link</button>`;
+                    addFileToDashboard(result.downloadLink);
+                } else {
+                    status.innerText = `❌ Upload failed: ${result.message}`;
+                }
+                progress.style.display = "none";
+            };
+
+            xhr.onerror = () => {
+                status.innerText = "❌ Upload failed due to a network error.";
+                progress.style.display = "none";
+            };
+
+            xhr.open("POST", "http://localhost:5001/upload", true);
+            xhr.send(formData);
+        }
+
+        function copyLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Link copied to clipboard!");
+            }).catch(() => {
+                alert("Failed to copy the link.");
             });
-
-            const result = await response.json();
-            if (result.downloadLink) {
-                status.innerHTML = `✅ File uploaded successfully! <br>`;
-                downloadLink.style.display = "block"; // Show the download link
-                downloadLink.innerHTML = `📥 <a href="${result.downloadLink}" target="_blank">${result.downloadLink}</a>`;
-                addFileToDashboard(result.downloadLink);
-            } else {
-                status.innerText = `❌ Upload failed: ${result.message}`;
-            }
         }
 
         function addFileToDashboard(link) {
