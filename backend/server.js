@@ -7,7 +7,7 @@ const uuid = require('uuid');
 const app = express();
 const port = 5001;
 
-const host = process.env.HOST_URL || 'https://your-vercel-app.vercel.app'; // Replace with your actual domain
+const host = process.env.HOST_URL || 'https://gofile-clone.vercel.app/'; // Replace with your actual domain
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -35,7 +35,7 @@ let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'gofileclone@gmail.com', // Replace with your email
-        pass: 'your-app-password'      // Replace with your app password
+        pass: 'dqrb vigh hwfz hpum'      // Replace with your app password
     }
 });
 

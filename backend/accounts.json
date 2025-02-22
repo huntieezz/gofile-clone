@@ -3,18 +3,9 @@
     "firstName": "Hunter",
     "lastName": "Jackson",
     "email": "huj76@icloud.com",
-    "password": "$2b$10$/cYixVCn07Wi1cYuCvHHw.ubdUOzL3rOjsonsL.q/OEeHjgKSMLhW",
+    "password": "Boardslide!1",
     "verified": false,
-    "token": "d03c80b3-538d-488d-896d-bdaa4b0375d8",
-    "profilePic": "/uploads/dd13715cadb6524961573985c1cdff05"
-  },
-  {
-    "firstName": "Hanna",
-    "lastName": "Bergqvist Jackson",
-    "email": "hannabjackson@gmail.com",
-    "password": "$2b$10$opV92rLB8qqriHW0QtLIrO9MlhFPYvS31MxUKh/kkieqbSYqPOvJi",
-    "verified": false,
-    "token": "f48ec5cb-d9c2-4f44-9a0c-bcc5b30c3ea8",
-    "profilePic": "/default-profile.png"
+    "token": "14517967-ebba-4efb-8488-a51234c9fc5b",
+    "profilePic": "/uploads/d84652abb2e3516c68b4e218b3c702e1"
   }
 ]
