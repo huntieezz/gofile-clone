@@ -102,7 +102,10 @@
                 progress.style.display = "none";
             };
 
-            xhr.open("POST", "http://localhost:5001/upload", true);
+            // Get the current hostname and port dynamically
+            const port = window.location.port ? `:${window.location.port}` : '';
+            const serverUrl = `${window.location.protocol}//${window.location.hostname}${port}/upload`;
+            xhr.open("POST", serverUrl, true);
             xhr.send(formData);
         }
 
